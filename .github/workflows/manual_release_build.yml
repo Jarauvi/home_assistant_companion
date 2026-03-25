@@ -1,4 +1,4 @@
-name: Manual Build
+name: Manual Release Build
 on:
   workflow_dispatch:
 
@@ -16,21 +16,20 @@ jobs:
 
       - name: Force Disable Cache & Mock Secrets
         run: |
-          # 1. Force gradle.properties to disable the failing cache
           sed -i 's/org.gradle.configuration-cache=true/org.gradle.configuration-cache=false/g' gradle.properties
           echo "org.gradle.vfs.watch=false" >> gradle.properties
           
       - name: Mock Google Services
         run: |
-          # Create a JSON that specifically includes the Home Assistant debug package name
+          # CHANGE: Package name is now the production "io.homeassistant.companion.android"
           echo '{
-            "project_info": {"project_number": "12345", "project_id": "hadev"},
+            "project_info": {"project_number": "12345", "project_id": "haprod"},
             "client": [
               {
                 "client_info": {
                   "mobilesdk_app_id": "1:12345:android:12345",
                   "android_client_info": {
-                    "package_name": "io.homeassistant.companion.android.debug"
+                    "package_name": "io.homeassistant.companion.android"
                   }
                 },
                 "api_key": [{"current_key": "mock_key"}],
@@ -39,19 +38,19 @@ jobs:
             ],
             "configuration_version": "1"
           }' > app/google-services.json
-          
-          # Copy it to the other modules just in case
           cp app/google-services.json wear/google-services.json
           cp app/google-services.json automotive/google-services.json
-      - name: Build
+
+      - name: Build Release APK
         run: |
           chmod +x gradlew
-          # -x versionFile: skips the versioning crash
-          # -x lint: skips slow code checks to save time
-          ./gradlew :app:assembleFullDebug -x versionFile -x lint --no-daemon
+          # CHANGE: Using assembleFullRelease instead of assembleFullDebug
+          # We still skip versionFile and lint for speed/stability
+          ./gradlew :app:assembleFullRelease -x versionFile -x lint --no-daemon
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: HomeAssistantCustom
-          path: app/build/outputs/apk/full/debug/*.apk
+          name: HomeAssistant-Release-Unsigned
+          # CHANGE: Path updated to the release folder
+          path: app/build/outputs/apk/full/release/*.apk
