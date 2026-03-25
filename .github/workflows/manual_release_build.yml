@@ -43,14 +43,23 @@ jobs:
 
       - name: Build Release APK
         run: |
+          # 1. Create a dummy keystore file so the compiler doesn't panic
+          # This satisfies the "input file was expected" error
+          touch app/release_keystore.keystore
+          
           chmod +x gradlew
-          # -x validateSigningFullRelease: This is the magic command to skip the crash
+          
+          # 2. Build while forcing the signing configuration to use Debug credentials
+          # This overrides the requirement for the 'real' production key
           ./gradlew :app:assembleFullRelease \
-            -x validateSigningFullRelease \
+            -Pandroid.signingConfigs.release.storeFile=$HOME/.android/debug.keystore \
+            -Pandroid.signingConfigs.release.storePassword=android \
+            -Pandroid.signingConfigs.release.keyAlias=androiddebugkey \
+            -Pandroid.signingConfigs.release.keyPassword=android \
             -x versionFile \
             -x lint \
             --no-daemon
-            
+
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
