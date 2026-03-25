@@ -1,39 +1,34 @@
 name: Custom Build
 
 on:
-  workflow_dispatch: # Allows you to click the "Run" button manually
+  workflow_dispatch: # This gives you the "Run" button
 
 jobs:
   build_apk:
-    name: Build Custom Assistant APK
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle'
 
       - name: Setup Mock Google Services
         run: |
-          # The app won't compile without these files existing
           cp .github/mock-google-services.json app/google-services.json
           cp .github/mock-google-services.json wear/google-services.json
           cp .github/mock-google-services.json automotive/google-services.json
 
-      - name: Build Full Debug APK
+      - name: Build APK
         run: |
           chmod +x gradlew
-          # We only build the 'full' variant which contains the wake word engine
-          ./gradlew :app:assembleFullDebug --no-daemon
+          # We add '-x versionFile' to skip the task that caused your crash
+          ./gradlew :app:assembleFullDebug -x versionFile --no-daemon
 
-      - name: Upload Finished APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Hei-Koti-Assistant-App
+          name: Hei-Koti-App
           path: app/build/outputs/apk/full/debug/*.apk
