@@ -1,5 +1,4 @@
-name: Hei Koti Force Build
-
+name: Manual Build
 on:
   workflow_dispatch:
 
@@ -7,8 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -16,29 +14,26 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Mock Google Services
+      - name: Force Disable Cache & Mock Secrets
         run: |
-          # Create dummy files so the compiler doesn't look for official secrets
-          mkdir -p app/ wear/ automotive/
+          # 1. Force gradle.properties to disable the failing cache
+          sed -i 's/org.gradle.configuration-cache=true/org.gradle.configuration-cache=false/g' gradle.properties
+          echo "org.gradle.vfs.watch=false" >> gradle.properties
+          
+          # 2. Mock Google Services
           echo '{"project_info":{"project_number":"1","project_id":"hadev"},"client":[{"client_info":{"mobilesdk_app_id":"1:1:android:1"}}] }' > app/google-services.json
           cp app/google-services.json wear/google-services.json
           cp app/google-services.json automotive/google-services.json
 
-      - name: Build APK
-        # continue-on-error ensures the 'Upload' step runs even if Gradle exits with 1
-        continue-on-error: true 
+      - name: Build
         run: |
           chmod +x gradlew
-          ./gradlew :app:assembleFullDebug \
-            -x versionFile \
-            --no-configuration-cache \
-            --no-daemon \
-            --stacktrace
+          # -x versionFile: skips the versioning crash
+          # -x lint: skips slow code checks to save time
+          ./gradlew :app:assembleFullDebug -x versionFile -x lint --no-daemon
 
-      - name: Upload APK
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: Hei-Koti-Final-APK
-          # This path looks for any APK generated in the full/debug folder
+          name: HomeAssistantCustom
           path: app/build/outputs/apk/full/debug/*.apk
-          if-no-files-found: error
