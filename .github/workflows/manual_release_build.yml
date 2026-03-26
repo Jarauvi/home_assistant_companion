@@ -1,4 +1,4 @@
-name: Manual Release Build
+name: Manual Full Release Build
 on:
   workflow_dispatch:
 
@@ -8,22 +8,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Force Disable Cache & Mock Secrets
+      - name: Disable Gradle Cache & Watcher
         run: |
           sed -i 's/org.gradle.configuration-cache=true/org.gradle.configuration-cache=false/g' gradle.properties
           echo "org.gradle.vfs.watch=false" >> gradle.properties
-          
-      - name: Mock Google Services
+
+      - name: Mock Firebase/Google Services
         run: |
-          # CHANGE: Package name is now the production "io.homeassistant.companion.android"
           echo '{
-            "project_info": {"project_number": "12345", "project_id": "haprod"},
+            "project_info": {"project_number": "12345", "project_id": "hadev"},
             "client": [
               {
                 "client_info": {
@@ -41,28 +39,24 @@ jobs:
           cp app/google-services.json wear/google-services.json
           cp app/google-services.json automotive/google-services.json
 
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 --decode > release.keystore
+
       - name: Build Release APK
         run: |
-          # 1. Create a dummy keystore file so the compiler doesn't panic
-          # This satisfies the "input file was expected" error
-          touch app/release_keystore.keystore
-          
           chmod +x gradlew
-          
-          # 2. Build while forcing the signing configuration to use Debug credentials
-          # This overrides the requirement for the 'real' production key
           ./gradlew :app:assembleFullRelease \
-            -Pandroid.signingConfigs.release.storeFile=$HOME/.android/debug.keystore \
-            -Pandroid.signingConfigs.release.storePassword=android \
-            -Pandroid.signingConfigs.release.keyAlias=androiddebugkey \
-            -Pandroid.signingConfigs.release.keyPassword=android \
+            -Pandroid.injected.signing.store.file=release.keystore \
+            -Pandroid.injected.signing.store.password=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
+            -Pandroid.injected.signing.key.alias=${{ secrets.ANDROID_KEY_ALIAS }} \
+            -Pandroid.injected.signing.key.password=${{ secrets.ANDROID_KEY_PASSWORD }} \
             -x versionFile \
             -x lint \
             --no-daemon
 
-      - name: Upload
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: HomeAssistant-Release-Unsigned
-          # CHANGE: Path updated to the release folder
+          name: HomeAssistantRelease
           path: app/build/outputs/apk/full/release/*.apk

@@ -1,0 +1,17 @@
+{
+  "type": "micro",
+  "wake_word": "Kuule Pekka",
+  "tflite_model": "kuule_pekka.tflite",
+  "model": "kuule_pekka.tflite",
+  "author": "Jarno Auvinen",
+  "website": "",
+  "trained_languages": ["fi"],
+  "version": 2,
+  "micro": {
+    "probability_cutoff": 0.96,
+    "feature_step_size": 10,
+    "sliding_window_size": 5,
+    "tensor_arena_size": 22860,
+    "minimum_esphome_version": "2024.7.0"
+  }
+}
