@@ -1,13 +1,14 @@
 {
   "type": "micro",
-  "wake_word": "Hei Koti",
+  "wake_word": "Hei ksoti",
+  "tflite_model": "tottoroo.tflite",
   "author": "Jarno Auvinen",
   "website": "",
   "model": "hei_koti.tflite",
   "trained_languages": ["fi"],
   "version": 2,
   "micro": {
-    "probability_cutoff": 0.97,
+    "probability_cutoff": 0.4,
     "feature_step_size": 10,
     "sliding_window_size": 5,
     "tensor_arena_size": 22860,

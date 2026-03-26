@@ -1,13 +1,14 @@
 {
   "type": "micro",
-  "wake_word": "Tottoroo",
+  "wake_word": "Töttöröö",
+  "tflite_model": "tottoroo.tflite",
+  "model": "tottoroo.tflite",
   "author": "Jarno Auvinen",
   "website": "",
-  "model": "tottoroo.tflite",
   "trained_languages": ["fi"],
   "version": 2,
   "micro": {
-    "probability_cutoff": 0.97,
+    "probability_cutoff": 0.74,
     "feature_step_size": 10,
     "sliding_window_size": 5,
     "tensor_arena_size": 22860,
